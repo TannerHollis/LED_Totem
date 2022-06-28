@@ -2,6 +2,7 @@
 #include <lgpio.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <cmath>
 
 Accelerometer::Accelerometer()
 {
@@ -20,24 +21,29 @@ void Accelerometer::updateAccelerometer() {
     accelerometer.z.update_flag = true;
 }
 
+float Accelerometer::scaleAccelerometerRaw(int16_t raw)
+{
+    switch (accelerometer.scale_setting) {
+    case MPU6050_ACCEL_FS_2:
+        return (float)raw / 16384.0f;
+    case MPU6050_ACCEL_FS_4:
+        return (float)raw / 8192.0f;
+    case MPU6050_ACCEL_FS_8:
+        return (float)raw / 4096.0f;
+    case MPU6050_ACCEL_FS_16:
+        return (float)raw / 2048.0f;
+    default:
+        return 0.0f;
+    }
+}
+
 float Accelerometer::aX()
 {
     if (!accelerometer.x.update_flag) {
         updateAccelerometer();
     }
     accelerometer.x.update_flag = false;
-    switch (accelerometer.scale_setting) {
-        case MPU6050_ACCEL_FS_2 :
-            return (float)accelerometer.x.raw / 16384.0f;
-        case MPU6050_ACCEL_FS_4 :
-            return (float)accelerometer.x.raw / 8192.0f;
-        case MPU6050_ACCEL_FS_8:
-            return (float)accelerometer.x.raw / 4096.0f;
-        case MPU6050_ACCEL_FS_16:
-            return (float)accelerometer.x.raw / 2048.0f;
-        default :
-            return 0.0f;
-    }
+    return scaleAccelerometerRaw(accelerometer.x.raw);
 }
 
 float Accelerometer::aY()
@@ -46,18 +52,7 @@ float Accelerometer::aY()
         updateAccelerometer();
     }
     accelerometer.y.update_flag = false;
-    switch (accelerometer.scale_setting) {
-    case MPU6050_ACCEL_FS_2:
-        return (float)accelerometer.y.raw / 16384.0f;
-    case MPU6050_ACCEL_FS_4:
-        return (float)accelerometer.y.raw / 8192.0f;
-    case MPU6050_ACCEL_FS_8:
-        return (float)accelerometer.y.raw / 4096.0f;
-    case MPU6050_ACCEL_FS_16:
-        return (float)accelerometer.y.raw / 2048.0f;
-    default:
-        return 0.0f;
-    }
+    return scaleAccelerometerRaw(accelerometer.y.raw);
 }
 
 float Accelerometer::aZ()
@@ -66,18 +61,7 @@ float Accelerometer::aZ()
         updateAccelerometer();
     }
     accelerometer.z.update_flag = false;
-    switch (accelerometer.scale_setting) {
-    case MPU6050_ACCEL_FS_2:
-        return (float)accelerometer.z.raw / 16384.0f;
-    case MPU6050_ACCEL_FS_4:
-        return (float)accelerometer.z.raw / 8192.0f;
-    case MPU6050_ACCEL_FS_8:
-        return (float)accelerometer.z.raw / 4096.0f;
-    case MPU6050_ACCEL_FS_16:
-        return (float)accelerometer.z.raw / 2048.0f;
-    default:
-        return 0.0f;
-    }
+    return scaleAccelerometerRaw(accelerometer.z.raw);
 }
 
 void Accelerometer::updateGyro() {
@@ -87,24 +71,29 @@ void Accelerometer::updateGyro() {
     gyro.z.update_flag = true;
 }
 
+float Accelerometer::scaleGyroRaw(int16_t raw)
+{
+    switch (gyro.scale_setting) {
+    case MPU6050_GYRO_FS_250:
+        return (float)raw / 131.0f;
+    case MPU6050_GYRO_FS_500:
+        return (float)raw / 65.5f;
+    case MPU6050_GYRO_FS_1000:
+        return (float)raw / 32.8f;
+    case MPU6050_GYRO_FS_2000:
+        return (float)raw / 16.4f;
+    default:
+        return 0.0f;
+    }
+}
+
 float Accelerometer::gX()
 {
     if (!gyro.x.update_flag) {
         updateGyro();
     }
     gyro.x.update_flag = false;
-    switch (gyro.scale_setting) {
-    case MPU6050_GYRO_FS_250:
-        return (float)gyro.x.raw / 131.0f;
-    case MPU6050_GYRO_FS_500:
-        return (float)gyro.x.raw / 65.5f;
-    case MPU6050_GYRO_FS_1000:
-        return (float)gyro.x.raw / 32.8f;
-    case MPU6050_GYRO_FS_2000:
-        return (float)gyro.x.raw / 16.4f;
-    default:
-        return 0.0f;
-    }
+    return scaleGyroRaw(gyro.x.raw);
 }
 
 float Accelerometer::gY()
@@ -113,18 +102,7 @@ float Accelerometer::gY()
         updateGyro();
     }
     gyro.y.update_flag = false;
-    switch (gyro.scale_setting) {
-    case MPU6050_GYRO_FS_250:
-        return (float)gyro.y.raw / 131.0f;
-    case MPU6050_GYRO_FS_500:
-        return (float)gyro.y.raw / 65.5f;
-    case MPU6050_GYRO_FS_1000:
-        return (float)gyro.y.raw / 32.8f;
-    case MPU6050_GYRO_FS_2000:
-        return (float)gyro.y.raw / 16.4f;
-    default:
-        return 0.0f;
-    }
+    return scaleGyroRaw(gyro.y.raw);
 }
 
 float Accelerometer::gZ()
@@ -133,18 +111,7 @@ float Accelerometer::gZ()
         updateGyro();
     }
     gyro.z.update_flag = false;
-    switch (gyro.scale_setting) {
-    case MPU6050_GYRO_FS_250:
-        return (float)gyro.z.raw / 131.0f;
-    case MPU6050_GYRO_FS_500:
-        return (float)gyro.z.raw / 65.5f;
-    case MPU6050_GYRO_FS_1000:
-        return (float)gyro.z.raw / 32.8f;
-    case MPU6050_GYRO_FS_2000:
-        return (float)gyro.z.raw / 16.4f;
-    default:
-        return 0.0f;
-    }
+    return scaleGyroRaw(gyro.z.raw);
 }
 
 void Accelerometer::updateTemp()
@@ -165,4 +132,136 @@ float Accelerometer::tempC()
 float Accelerometer::tempF()
 {
     return tempC() * 1.8f + 32.0f;
+}
+
+void Accelerometer::getAccelerometerScaling() 
+{
+    accelerometer.scale_setting = MPU6050_getFullScaleAccelRange();
+}
+
+void Accelerometer::setAccelerometerScaling(uint8_t scale) 
+{
+    MPU6050_setFullScaleAccelRange(scale);
+    getAccelerometerScaling();
+}
+
+void Accelerometer::getGyroScaling() 
+{
+    gyro.scale_setting = MPU6050_getFullScaleGyroRange();
+}
+
+void Accelerometer::setGyroScaling(uint8_t scale) 
+{
+    MPU6050_setFullScaleGyroRange(scale);
+    getGyroScaling();
+}
+
+void Accelerometer::accelerometerAutoScale()
+{
+    int16_t threshold = accelerometer.auto_scale;
+    int16_t x = abs(accelerometer.x.raw);
+    int16_t y = abs(accelerometer.y.raw);
+    int16_t z = abs(accelerometer.z.raw);
+    bool up_scale = x > threshold || y > threshold || z > threshold;
+    bool down_scale = x < INT16_MAX - threshold || y < INT16_MAX - threshold || z < INT16_MAX - threshold;
+    if (up_scale) {
+        switch (accelerometer.scale_setting)
+        {
+            case MPU6050_ACCEL_FS_2 :
+                setAccelerometerScaling(MPU6050_ACCEL_FS_4);
+                break;
+            case MPU6050_ACCEL_FS_4 :
+                setAccelerometerScaling(MPU6050_ACCEL_FS_8);
+                break;
+            case MPU6050_ACCEL_FS_8:
+                setAccelerometerScaling(MPU6050_ACCEL_FS_16);
+                break;
+            case MPU6050_ACCEL_FS_16:
+                break;
+        }
+    }
+    if (down_scale) {
+        switch (accelerometer.scale_setting)
+        {
+        case MPU6050_ACCEL_FS_2:
+            break;
+        case MPU6050_ACCEL_FS_4:
+            setAccelerometerScaling(MPU6050_ACCEL_FS_2);
+            break;
+        case MPU6050_ACCEL_FS_8:
+            setAccelerometerScaling(MPU6050_ACCEL_FS_4);
+            break;
+        case MPU6050_ACCEL_FS_16:
+            setAccelerometerScaling(MPU6050_ACCEL_FS_8);
+            break;
+        }
+    }
+}
+
+void Accelerometer::setAccelerometerAutoScale(float threshold)
+{
+    if (threshold > 1.0f) {
+        accelerometer.auto_scale = INT16_MAX;
+    }
+    else if (threshold < 0.0f) {
+        accelerometer.auto_scale = INT16_MAX / 2;
+    }
+    else {
+        accelerometer.auto_scale = (1.0f + threshold) / 2.0f * INT16_MAX;
+    }
+}
+
+void Accelerometer::gyroAutoScale()
+{
+    int16_t threshold = gyro.auto_scale;
+    int16_t x = abs(gyro.x.raw);
+    int16_t y = abs(gyro.y.raw);
+    int16_t z = abs(gyro.z.raw);
+    bool up_scale = x > threshold || y > threshold || z > threshold;
+    bool down_scale = x < INT16_MAX - threshold || y < INT16_MAX - threshold || z < INT16_MAX - threshold;
+    if (up_scale) {
+        switch (gyro.scale_setting)
+        {
+            case MPU6050_GYRO_FS_250:
+                setGyroScaling(MPU6050_GYRO_FS_500);
+                break;
+            case MPU6050_GYRO_FS_500:
+                setGyroScaling(MPU6050_GYRO_FS_1000);
+                break;
+            case MPU6050_GYRO_FS_1000:
+                setGyroScaling(MPU6050_GYRO_FS_2000);
+                break;
+            case MPU6050_GYRO_FS_2000:
+                break;
+        }
+    }
+    if (down_scale) {
+        switch (gyro.scale_setting)
+        {
+        case MPU6050_GYRO_FS_250:
+            break;
+        case MPU6050_GYRO_FS_500:
+            setGyroScaling(MPU6050_GYRO_FS_250);
+            break;
+        case MPU6050_GYRO_FS_1000:
+            setGyroScaling(MPU6050_GYRO_FS_500);
+            break;
+        case MPU6050_GYRO_FS_2000:
+            setGyroScaling(MPU6050_GYRO_FS_1000);
+            break;
+        }
+    }
+}
+
+void Accelerometer::setGyroAutoScale(float threshold)
+{
+    if (threshold > 1.0f) {
+        gyro.auto_scale = INT16_MAX;
+    }
+    else if (threshold < 0.0f) {
+        gyro.auto_scale = INT16_MAX / 2;
+    }
+    else {
+        gyro.auto_scale = (1.0f + threshold) / 2.0f * INT16_MAX;
+    }
 }

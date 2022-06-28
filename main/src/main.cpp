@@ -118,12 +118,13 @@ int main(int argc, char** argv)
 		panel.display();
     }
 
+	timeStart = lguTime();
 	Accelerometer mpu6050 = Accelerometer();
-	for (int i = 0; i < 20; i++) {
+	while (lguTime() - timeStart < 20.0f) {
 		float x, y, z;
 		x = mpu6050.aX();
-		printf("X: &4.4f, Y: %4.4f, Z: %4.4f\n", x, mpu6050.aY(), mpu6050.aZ());
-		lguSleep(0.5f);
+		printf("X: %4.4f, Y: %4.4f, Z: %4.4f\n", x, mpu6050.aY(), mpu6050.aZ());
+		lguSleep(0.01f);
 	}
 
 	return 0;

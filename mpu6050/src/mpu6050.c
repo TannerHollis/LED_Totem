@@ -83,12 +83,16 @@ void I2Cdev_writeBits(uint8_t devAddr, uint8_t regAddr, uint8_t bit_start, uint8
     I2Cdev_writeByte(devAddr, regAddr, &buffer);
 }
 
-void I2Cdev_writeByte(uint8_t devAddr, uint8_t regAddr, uint8_t* buffer) {
-    lgI2cWriteByteData(mpu6050.i2cHandle, regAddr, buffer[0]);
+void I2Cdev_writeByte(uint8_t devAddr, uint8_t regAddr, uint8_t data) {
+    lgI2cWriteByteData(mpu6050.i2cHandle, regAddr, data);
 }
 
 void I2Cdev_writeBytes(uint8_t devAddr, uint8_t regAddr, uint8_t* buffer, uint8_t len) {
     lgI2cWriteI2CBlockData(mpu6050.i2cHandle, regAddr, buffer, len);
+}
+
+void I2Cdev_writeWord(uint8_t devAddr, uint8_t regAddr, uint16_t data) {
+    lgI2cWriteWordData(mpu6050.i2cHandle, regAddr, data);
 }
 
 /** Specific address constructor.
@@ -111,6 +115,12 @@ void MPU6050(uint8_t address) {
 void MPU6050_initialize(uint8_t address) {
     MPU6050(address);
     mpu6050.i2cHandle = lgI2cOpen(0x00, address, 0x00);
+    if (mpu6050.i2cHandle > 0) {
+        printf("MPU6050 Initialization failed.\n");
+    }
+    else {
+        printf("MPU6050 Initialization success!\n");
+    }
     MPU6050_setClockSource(MPU6050_CLOCK_PLL_XGYRO);
     MPU6050_setFullScaleGyroRange(MPU6050_GYRO_FS_250);
     MPU6050_setFullScaleAccelRange(MPU6050_ACCEL_FS_2);
