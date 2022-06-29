@@ -1,5 +1,5 @@
 # Add Executable
-add_executable(main main.cpp)
+add_executable(main main.cpp App.cpp)
 
 # Include header files
 include_directories(${WaterSimulation_SOURCE_DIR}/Box2D
@@ -17,10 +17,6 @@ link_directories(${WaterSimulation_SOURCE_DIR}/ws2812-rpi/src
 
 # Link libraries
 target_link_libraries(main  Box2D
+							accelerometer
+							ledpanel
 							lgpio)
-
-# Link accelerometer library
-target_link_libraries(main accelerometer mpu6050 lgpio)
-
-# Link ledpanel library
-target_link_libraries(main ledpanel ws2812-rpi)

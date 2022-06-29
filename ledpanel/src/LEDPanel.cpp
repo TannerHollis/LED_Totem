@@ -1,18 +1,17 @@
-#include "LEDPanel.h"
-#include <ws2811.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <LEDPanel.h>
 
 ws2811_t ws2811;
 
 ws2811_led_t* pixels;
 
-LEDPanel::LEDPanel(unsigned char panelsX, unsigned char panelsY, unsigned int panelWidth, unsigned int panelHeight) : 
+LEDPanel::LEDPanel(uint8_t panelsX, uint8_t panelsY, uint16_t panelWidth, uint16_t panelHeight) :
     panelsX(panelsX),
     panelsY(panelsY),
     panelWidth(panelWidth),
-    panelHeight(panelHeight)
-{
+    panelHeight(panelHeight),
+    width(panelsX * panelWidth),
+    height(panelsY * panelHeight)
+{  
     // Initialize the controller properties
     ws2811.freq = WS2811_TARGET_FREQ;
     ws2811.dmanum = DMA;
@@ -50,13 +49,13 @@ LEDPanel::~LEDPanel()
     ws2811_fini(&ws2811);
 }
 
-unsigned int LEDPanel::translateXYtoIndex(unsigned int x, unsigned int y)
+uint16_t LEDPanel::translateXYtoIndex(uint16_t x, uint16_t y)
 {
-    unsigned char panelX = x / panelWidth;
-    unsigned char panelY = y / panelHeight;
+    uint8_t panelX = x / panelWidth;
+    uint8_t panelY = y / panelHeight;
     x = x % panelWidth;
     y = y % panelHeight;
-    unsigned int index = (panelX + panelX * panelY) * panelWidth * panelHeight + y * panelWidth + ((y % 2 == 1) ? panelWidth - x - 1 : x);
+    uint16_t index = (panelX + panelX * panelY) * panelWidth * panelHeight + y * panelWidth + ((y % 2 == 1) ? panelWidth - x - 1 : x);
     return index;
 }
 
@@ -65,15 +64,15 @@ void LEDPanel::display()
     ws2811_render(&ws2811);
 }
 
-void LEDPanel::setPixel(unsigned int x, unsigned int y, Color_t rgb) 
+void LEDPanel::setPixel(uint16_t x, uint16_t y, Color_t rgb)
 {
     unsigned int index = translateXYtoIndex(x, y);
-    pixels[index] = ((unsigned int)rgb.r << 16) | ((unsigned int)rgb.g << 8) | (unsigned int)rgb.b;
+    pixels[index] = ((uint16_t)rgb.r << 16) | ((uint16_t)rgb.g << 8) | (uint16_t)rgb.b;
 }
 
-Color_t LEDPanel::getPixel(unsigned int x, unsigned y)
+Color_t LEDPanel::getPixel(uint16_t x, uint16_t y)
 {
-    unsigned int index = translateXYtoIndex(x, y);
+    uint16_t index = translateXYtoIndex(x, y);
     Color_t color;
     color.r = (pixels[index] >> 16) & 0xFF;
     color.g = (pixels[index] >>  8) & 0xFF;
@@ -81,7 +80,7 @@ Color_t LEDPanel::getPixel(unsigned int x, unsigned y)
     return color;
 }
 
-void LEDPanel::clearPixel(unsigned x, unsigned y) 
+void LEDPanel::clearPixel(uint16_t x, uint16_t y)
 {
     Color_t color = { 0, 0, 0 };
     setPixel(x, y, color);
@@ -89,8 +88,8 @@ void LEDPanel::clearPixel(unsigned x, unsigned y)
 
 void LEDPanel::fillPanel(Color_t rgb) 
 {
-    for (unsigned int y = 0; y < panelsY * panelHeight; y++) {
-        for (unsigned int x = 0; x < panelsX * panelWidth; x++) {
+    for (uint16_t y = 0; y < panelsY * panelHeight; y++) {
+        for (uint16_t x = 0; x < panelsX * panelWidth; x++) {
             setPixel(x, y, rgb);
         }
     }
