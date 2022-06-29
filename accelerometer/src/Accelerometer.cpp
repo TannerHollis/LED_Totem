@@ -7,6 +7,8 @@
 Accelerometer::Accelerometer()
 {
     MPU6050_initialize(MPU6050_DEFAULT_ADDRESS);
+    getAccelerometerScaling();
+    getGyroScaling();
 }
 
 Accelerometer::~Accelerometer()
@@ -15,6 +17,7 @@ Accelerometer::~Accelerometer()
 }
 
 void Accelerometer::updateAccelerometer() {
+    accelerometerAutoScale();
     MPU6050_getAcceleration(&accelerometer.x.raw, &accelerometer.y.raw, &accelerometer.z.raw);
     accelerometer.x.update_flag = true;
     accelerometer.y.update_flag = true;
@@ -65,6 +68,7 @@ float Accelerometer::aZ()
 }
 
 void Accelerometer::updateGyro() {
+    gyroAutoScale();
     MPU6050_getRotation(&gyro.x.raw, &gyro.y.raw, &gyro.z.raw);
     gyro.x.update_flag = true;
     gyro.y.update_flag = true;
@@ -143,6 +147,7 @@ void Accelerometer::setAccelerometerScaling(uint8_t scale)
 {
     MPU6050_setFullScaleAccelRange(scale);
     getAccelerometerScaling();
+    printf("Accel scaling changed to %i\n", scale);
 }
 
 void Accelerometer::getGyroScaling() 
@@ -162,8 +167,8 @@ void Accelerometer::accelerometerAutoScale()
     int16_t x = abs(accelerometer.x.raw);
     int16_t y = abs(accelerometer.y.raw);
     int16_t z = abs(accelerometer.z.raw);
-    bool up_scale = x > threshold || y > threshold || z > threshold;
-    bool down_scale = x < INT16_MAX - threshold || y < INT16_MAX - threshold || z < INT16_MAX - threshold;
+    bool up_scale = (x > threshold) || (y > threshold) || (z > threshold);
+    bool down_scale = (x < INT16_MAX - threshold) && (y < INT16_MAX - threshold) && (z < INT16_MAX - threshold);
     if (up_scale) {
         switch (accelerometer.scale_setting)
         {
@@ -180,7 +185,7 @@ void Accelerometer::accelerometerAutoScale()
                 break;
         }
     }
-    if (down_scale) {
+    else if (down_scale) {
         switch (accelerometer.scale_setting)
         {
         case MPU6050_ACCEL_FS_2:
@@ -209,6 +214,7 @@ void Accelerometer::setAccelerometerAutoScale(float threshold)
     else {
         accelerometer.auto_scale = (1.0f + threshold) / 2.0f * INT16_MAX;
     }
+    printf("Accel auto scale set to %i\n", accelerometer.auto_scale);
 }
 
 void Accelerometer::gyroAutoScale()
@@ -235,7 +241,7 @@ void Accelerometer::gyroAutoScale()
                 break;
         }
     }
-    if (down_scale) {
+    else if (down_scale) {
         switch (gyro.scale_setting)
         {
         case MPU6050_GYRO_FS_250:

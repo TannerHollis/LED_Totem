@@ -44,50 +44,43 @@ THE SOFTWARE.
 
 MPU6050_t mpu6050;
 
-bool I2Cdev_readBit(uint8_t devAddr, uint8_t regAddr, uint8_t bit, uint8_t* buffer) {
+void I2Cdev_readBit(uint8_t devAddr, uint8_t regAddr, uint8_t bit, uint8_t* buffer) {
     I2Cdev_readByte(devAddr, regAddr, buffer);
-    return (buffer[0] >> bit) & 0x01;
+    *buffer = (*buffer >> bit) & 0x01;
 }
 
 void I2Cdev_readBits(uint8_t devAddr, uint8_t regAddr, uint8_t bit_start, uint8_t len, uint8_t* buffer) {
     I2Cdev_readByte(devAddr, regAddr, buffer);
-    uint8_t ret = 0x00;
-    for (uint8_t i = bit_start; i < bit_start + len; i++) {
-        ret |= ( buffer[0] & (0x01 << i) ) >> bit_start;
-    }
-    return ret;
+    uint8_t mask = ((0x01 << len) - 1) << (bit_start - len + 1);
+    *buffer = (*buffer & mask) >> (bit_start - len + 1);
 }
 
 void I2Cdev_readByte(uint8_t devAddr, uint8_t regAddr, uint8_t* buffer) {
-    buffer[0] = lgI2cReadByteData(mpu6050.i2cHandle, regAddr);
+    *buffer = lgI2cReadByteData(mpu6050.i2cHandle, regAddr);
 }
 
-void I2Cdev_readBytes(uint8_t devAddr, uint8_t regAddr, uint8_t* buffer, uint8_t len) {
-    lgI2cReadI2CBlockData(mpu6050.i2cHandle, regAddr, buffer, len);
+void I2Cdev_readBytes(uint8_t devAddr, uint8_t regAddr, uint8_t len, uint8_t* buffer) {
+    int ret = lgI2cReadI2CBlockData(mpu6050.i2cHandle, regAddr, buffer, len);
 }
 
 void I2Cdev_writeBit(uint8_t devAddr, uint8_t regAddr, uint8_t bit, uint8_t level) {
-    uint8_t buffer;
-    I2Cdev_readByte(devAddr, regAddr, &buffer);
-    buffer = (buffer & ~(0x01 << bit)) | (level << bit);
-    I2Cdev_writeByte(devAddr, regAddr, &buffer);
+    I2Cdev_writeBits(devAddr, regAddr, bit, 1, level);
 }
  
 void I2Cdev_writeBits(uint8_t devAddr, uint8_t regAddr, uint8_t bit_start, uint8_t len, uint8_t level) {
     uint8_t buffer;
     I2Cdev_readByte(devAddr, regAddr, &buffer);
-    for (uint8_t i = bit_start; i < bit_start + len; i++) {
-        buffer &= ~(0x01 << i);
-        buffer |= ((level >> i) & 0x01) << i;
-    }
-    I2Cdev_writeByte(devAddr, regAddr, &buffer);
+    uint8_t mask = ((0x01 << len) - 1) << (bit_start - len + 1);
+    buffer &= ~mask;
+    buffer |= level << (bit_start - len + 1);
+    I2Cdev_writeByte(devAddr, regAddr, buffer);
 }
 
 void I2Cdev_writeByte(uint8_t devAddr, uint8_t regAddr, uint8_t data) {
     lgI2cWriteByteData(mpu6050.i2cHandle, regAddr, data);
 }
 
-void I2Cdev_writeBytes(uint8_t devAddr, uint8_t regAddr, uint8_t* buffer, uint8_t len) {
+void I2Cdev_writeBytes(uint8_t devAddr, uint8_t regAddr, uint8_t len, uint8_t* buffer) {
     lgI2cWriteI2CBlockData(mpu6050.i2cHandle, regAddr, buffer, len);
 }
 
@@ -114,13 +107,8 @@ void MPU6050(uint8_t address) {
  */
 void MPU6050_initialize(uint8_t address) {
     MPU6050(address);
-    mpu6050.i2cHandle = lgI2cOpen(0x00, address, 0x00);
-    if (mpu6050.i2cHandle > 0) {
-        printf("MPU6050 Initialization failed.\n");
-    }
-    else {
-        printf("MPU6050 Initialization success!\n");
-    }
+    mpu6050.i2cHandle = lgI2cOpen(1, address, 0);
+
     MPU6050_setClockSource(MPU6050_CLOCK_PLL_XGYRO);
     MPU6050_setFullScaleGyroRange(MPU6050_GYRO_FS_250);
     MPU6050_setFullScaleAccelRange(MPU6050_ACCEL_FS_2);

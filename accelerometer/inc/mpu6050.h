@@ -410,15 +410,14 @@ typedef struct MPU6050_t {
     uint8_t i2cHandle;
 } MPU6050_t;
 
-void I2Cdev_readBit(uint8_t devAddr, uint8_t regAddr, uint8_t bit, uint8_t* buffer);
+bool I2Cdev_readBit(uint8_t devAddr, uint8_t regAddr, uint8_t bit, uint8_t* buffer);
 void I2Cdev_readBits(uint8_t devAddr, uint8_t regAddr, uint8_t bit_start, uint8_t len, uint8_t* buffer);
 void I2Cdev_readByte(uint8_t devAddr, uint8_t regAddr, uint8_t* buffer);
-void I2Cdev_readBytes(uint8_t devAddr, uint8_t regAddr, uint8_t len, uint8_t* buffer);
+void I2Cdev_readBytes(uint8_t devAddr, uint8_t regAddr, uint8_t* buffer, uint8_t len);
 void I2Cdev_writeBit(uint8_t devAddr, uint8_t regAddr, uint8_t bit, uint8_t level);
 void I2Cdev_writeBits(uint8_t devAddr, uint8_t regAddr, uint8_t bit_start, uint8_t len, uint8_t level);
-void I2Cdev_writeByte(uint8_t devAddr, uint8_t regAddr, uint8_t data);
-void I2Cdev_writeBytes(uint8_t devAddr, uint8_t regAddr, uint8_t len, uint8_t* buffer);
-void I2Cdev_writeWord(uint8_t devAddr, uint8_t regAddr, uint16_t data);
+void I2Cdev_writeByte(uint8_t devAddr, uint8_t regAddr, uint8_t* buffer);
+void I2Cdev_writeBytes(uint8_t devAddr, uint8_t regAddr, uint8_t* buffer, uint8_t len);
 
 void MPU6050(uint8_t address);
 

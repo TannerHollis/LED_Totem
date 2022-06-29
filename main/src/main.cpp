@@ -120,10 +120,10 @@ int main(int argc, char** argv)
 
 	timeStart = lguTime();
 	Accelerometer mpu6050 = Accelerometer();
-	while (lguTime() - timeStart < 20.0f) {
-		float x, y, z;
-		x = mpu6050.aX();
-		printf("X: %4.4f, Y: %4.4f, Z: %4.4f\n", x, mpu6050.aY(), mpu6050.aZ());
+    mpu6050.setAccelerometerAutoScale(0.75f);
+
+	while (lguTime() - timeStart < 2.0f) {
+		printf("X: %4.4f, Y: %4.4f, Z: %4.4f, Temp(F): %4.4f\n", mpu6050.aX(), mpu6050.aY(), mpu6050.aZ(), mpu6050.tempF());
 		lguSleep(0.01f);
 	}
 
