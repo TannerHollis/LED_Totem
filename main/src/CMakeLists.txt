@@ -2,7 +2,7 @@
 add_executable(main main.cpp)
 
 # Include header files
-include_directories("/home/pi/Box2D/liquidfun/Box2D"
+include_directories(${WaterSimulation_SOURCE_DIR}/Box2D
 					${WaterSimulation_SOURCE_DIR}/ws2812-rpi/inc
 					${WaterSimulation_SOURCE_DIR}/ledpanel/inc
 					${WaterSimulation_SOURCE_DIR}/accelerometer/inc
@@ -16,7 +16,7 @@ link_directories(${WaterSimulation_SOURCE_DIR}/ws2812-rpi/src
 				${WaterSimulation_SOURCE_DIR}/mpu6050/src)
 
 # Link libraries
-target_link_libraries(main  "/home/pi/Box2D/liquidfun/Box2D/Box2D/libliquidfun.a"
+target_link_libraries(main  Box2D
 							lgpio)
 
 # Link accelerometer library

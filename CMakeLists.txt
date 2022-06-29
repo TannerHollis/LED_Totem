@@ -13,8 +13,11 @@ add_subdirectory(ws2812-rpi)
 # Add LEDPanel directory
 add_subdirectory(ledpanel)
 
-#Add Accelerometer directory
+# Add Accelerometer directory
 add_subdirectory(accelerometer)
+
+# Add liquidfun directory
+add_subdirectory(Box2D)
 
 # Add main directory
 add_subdirectory(main)
