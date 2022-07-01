@@ -3,8 +3,9 @@
 
 #include <App.h>
 
-#define DEFAULT_BALL_COUNT 3
+#define DEFAULT_BALL_COUNT 8
 #define DEFAULT_BALL_MAX 50
+#define DEFAULT_BALL_BOUNCINESS 0.7f
 
 class BouncingBalls : public App
 {
@@ -12,7 +13,8 @@ public :
 	BouncingBalls(uint8_t id, 
 		LEDPanel* panel,
 		Accelerometer* accelerometer,
-		b2World* world) : App(id, panel, accelerometer)
+		IOController* ioc,
+		b2World* world) : App(id, panel, accelerometer, ioc)
 	{
 		this->world = world;
 	}
@@ -29,32 +31,38 @@ public :
 	void addBalls(uint8_t num)
 	{
 		int8_t end_count = ball_count + num;
-		for (int8_t i = ball_count; i < end_count; i++) {
-			if (ball_count == DEFAULT_BALL_MAX - 1) {
+		for (uint8_t i = ball_count; i < end_count; i++) {
+			if (ball_count == DEFAULT_BALL_MAX) {
 				return;
 			}
 			else {
 				// Define ball body
-				ballBodyDef.type = b2_dynamicBody;
-				float x = randomFloat(-5.0f, 5.0f);
-				float y = randomFloat(0.0f, 10.0f);
-				ballBodyDef.position.Set(x, y);
-				ballBodyDef.angle = 0.0f;
-				balls[i] = world->CreateBody(&ballBodyDef);
+				b2BodyDef bodyDef;
+				bodyDef.type = b2_dynamicBody;
+				float x = randomFloat(0.0f, panel->getWidth());
+				float y = randomFloat(0.0f, panel->getHeight());
+				bodyDef.position.Set(x, y);
+				bodyDef.angle = 0.0f;
+				balls[i] = world->CreateBody(&bodyDef);
+
+				// Create random ball color
+				ballColors[i] = Color::ColorLerpRainbow(0.0f, 1.0f, randomFloat(0.0f, 1.0f));
 
 				// Define ball radius
 				ballShape.m_radius = 0.5f;
 
 				// Define the dynamic body fixture
-				ballFixtureDef.shape = &ballShape;
+				b2FixtureDef fixtureDef;
+				fixtureDef.shape = &ballShape;
 
 				// Define ball density, friction and bounciness
-				ballFixtureDef.density = 1.0f;
-				ballFixtureDef.friction = 0.3f;
-				ballFixtureDef.restitution = 0.5f;
+				fixtureDef.density = 1.0f;
+				fixtureDef.friction = 0.3f;
+				fixtureDef.restitution = DEFAULT_BALL_BOUNCINESS;
 
 				// Add shape to body
-				balls[i]->CreateFixture(&ballFixtureDef);
+				balls[i]->CreateFixture(&fixtureDef);
+
 				ball_count++;
 			}
 		}
@@ -63,12 +71,14 @@ public :
 	void removeBalls(uint8_t num)
 	{
 		int8_t end_count = ball_count - num;
-		for (int8_t i = ball_count; i > end_count; i--) {
-			if (ball_count == -1) {
+		for (uint8_t i = ball_count - 1; i >= end_count; i--) {
+			if (ball_count == 0) {
 				return;
 			}
 			else {
+				printf("Removing ball: %u\n", ball_count);
 				world->DestroyBody(balls[i]);
+				panel->clearPixel(balls[i]->GetPosition().x, balls[i]->GetPosition().y);
 				ball_count--;
 			}
 		}
@@ -77,76 +87,114 @@ public :
 private:
 	void initializeRun()
 	{
-		printf("Initializing Bouncingballs.\n");
+		printf("Initializing Bouncing Balls.\n");
+
+		// Add edeges to world
+		addEdges();
+
+		// Add balls to world
+		addBalls(DEFAULT_BALL_COUNT);
+	}
+
+	void addEdges()
+	{
 		// Define ground body
-		groundBodyDef.position.Set(0.0f, 0.0f);
+		b2BodyDef bodyDef;
+		bodyDef.position.Set(0.0f, 0.0f);
 
 		// Create body factory
-		groundBody = world->CreateBody(&groundBodyDef);
+		groundBody = world->CreateBody(&bodyDef);
+
+		// Calculate edge parameters
+		float w = panel->getWidth();
+		float h = panel->getHeight();
+		float topH = 1.0f;
+		float topW = w / 2.0f + 2 * topH;
+		float posX = w / 2.0f;
+		float posY = h / 2.0f;
 
 		// Define ground walls
-		groundBottom.SetAsBox(7.0f, 1.0f, b2Vec2(0.0f, -1.0f), 0.0f);
-		groundTop.SetAsBox(7.0f, 1.0f, b2Vec2(0.0f, 11.0f), 0.0f);
-		groundLeft.SetAsBox(1.0f, 7.0f, b2Vec2(-6.0f, 5.0f), 0.0f);
-		groundRight.SetAsBox(1.0f, 7.0f, b2Vec2(6.0f, 5.0f), 0.0f);
+		groundBottom.SetAsBox(topW, topH, b2Vec2(posX, -topH / 2.0f), 0.0f);
+		groundTop.SetAsBox(topW, topH, b2Vec2(posX, h + topH / 2.0f), 0.0f);
+		groundLeft.SetAsBox(topH, topW, b2Vec2(-topH / 2.0f, posY), 0.0f);
+		groundRight.SetAsBox(topH, topW, b2Vec2(w + topH / 2.0f, posY), 0.0f);
 
 		// Add ground walls to world
 		groundBody->CreateFixture(&groundBottom, 0.0f);
 		groundBody->CreateFixture(&groundTop, 0.0f);
 		groundBody->CreateFixture(&groundLeft, 0.0f);
 		groundBody->CreateFixture(&groundRight, 0.0f);
-
-		// Add balls to world
-		addBalls(DEFAULT_BALL_COUNT);
 	}
 
 	void deInitializeRun()
 	{
-		printf("De-Initializing Bouncingballs.\n");
+		printf("De-Initializing Bouncing Balls.\n");
 		b2Body* bodies = world->GetBodyList();
 		while (bodies)
 		{
 			world->DestroyBody(bodies);
 			bodies = bodies->GetNext();
 		}
-		ball_count = 0;
 	}
 
 	// Pre-process update
-	void preUpdate() {
-		b2Vec2 position;
-		for (uint8_t i = 0; i < ball_count; i++) {
-			position = balls[i]->GetPosition();
-			printf("Ball: %u, X: %4.2f, Y: %4.2f\n", i, position.x, position.y);
+	void preUpdate()
+	{
+		// Clear LEDs at positions
+		for (uint32_t i = 0; i < ball_count; i++) {
+			panel->clearPixel(balls[i]->GetPosition().x, balls[i]->GetPosition().y);
 		}
+
+		world->SetGravity(b2Vec2(100.0f * accelerometer->aX(), 100.0f * accelerometer->aY()));
 	}
 
 	// Process update
 	void processUpdate()
 	{
-		world->Step(timeStep, velocityIterations, positionIterations);
+		world->Step(getFrameTime(), velocityIterations, positionIterations);
 	}
 
 	// Post-process update
-	void postUpdate() {
-		// Do nothing.
+	void postUpdate()
+	{
+		// Clear LEDs at positions
+		for (uint32_t i = 0; i < ball_count; i++) {
+			panel->setPixel(balls[i]->GetPosition().x, balls[i]->GetPosition().y, ballColors[i]);
+		}
+
+		// Display LEDs
+		panel->display();
+	}
+
+	// Process Inputs
+	void processInputs()
+	{
+		if (ioc->isButtonLongHeld(INPUT_BTTN_NEXT)) {
+			stop(1);
+		}
+		else if (ioc->isButtonLongHeld(INPUT_BTTN_PREVIOUS)) {
+			stop(-1);
+		}
+		else if (ioc->isButtonShortPressed(INPUT_BTTN_NEXT)) {
+			addBalls(1);
+		}
+		else if (ioc->isButtonShortPressed(INPUT_BTTN_PREVIOUS)) {
+			removeBalls(1);
+		}
 	}
 
 	// Box2D objects
 	b2World* world;
-	b2BodyDef groundBodyDef;
 	b2Body* groundBody;
 	b2PolygonShape groundBottom;
 	b2PolygonShape groundLeft;
 	b2PolygonShape groundRight;
 	b2PolygonShape groundTop;
-	b2BodyDef ballBodyDef;
 	b2Body* balls[DEFAULT_BALL_MAX];
+	Color ballColors[DEFAULT_BALL_MAX];
 	b2CircleShape ballShape;
-	b2FixtureDef ballFixtureDef;
 
 	// Box2D simulation vars
-	float32 timeStep = 1 / 60.0f;
 	int32 velocityIterations = 6;
 	int32 positionIterations = 2;
 

@@ -19,5 +19,8 @@ add_subdirectory(accelerometer)
 # Add liquidfun directory
 add_subdirectory(Box2D)
 
+# Add iocontroller directory
+add_subdirectory(iocontroller)
+
 # Add main directory
 add_subdirectory(main)

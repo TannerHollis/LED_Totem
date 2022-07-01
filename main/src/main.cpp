@@ -17,9 +17,7 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-#include <Accelerometer.h>
 #include <Apps.h>
-#include <lgpio.h>
 #include <stdio.h>
 
 // This is a simple example of building and running a simulation
@@ -36,49 +34,25 @@ int main(int argc, char** argv)
 	Accelerometer mpu6050 = Accelerometer();
 	mpu6050.setAccelerometerAutoScale(0.75f);
 
-	// Create gravity
-	b2Vec2 gravity(0.0f, -10.0f);
-
+	// Initialize I/O Controller
+	IOController ioc = IOController();
+	
+	// Create gravity and gravity
+	b2Vec2 gravity(0.0f, 0.0f);
 	b2World world(gravity);
 
 	// Define apps
-	App *apps[] = { new BouncingBall(0, &panel, &mpu6050, &world),
-					new BouncingBalls(1, &panel, &mpu6050, &world)};
-
-	// Define start time
-	double timeStart, frameTimeStart;
-
-	apps[0]->initialize();
+	App *apps[] = { new BouncingBall(0, &panel, &mpu6050, &ioc, &world),
+					new BouncingBalls(1, &panel, &mpu6050, &ioc, &world),
+					new WaterSimulation(2, &panel, &mpu6050, &ioc, &world),
+					new WaterWheel(3, &panel, &mpu6050, &ioc, &world)};
 
 	// Initialize and run each app
 	for (App* app : apps) {
-		app->initialize();
-		timeStart = lguTime();
-		while(lguTime() - timeStart < 5.0f) {
-			frameTimeStart = lguTime();
-			app->update();
-			while (lguTime() - frameTimeStart < 1.0f / 60.0f) {
-				// Do nothing.
-			}
-		}
-		app->deInitialize();
+        app->loop();
 	}
 
-	Color_t color = {128, 128, 0};
-	panel.fillPanel(color);
-
-	float timeStep = 1.0f / 60.0f;
-	timeStart = lguTime();
-    for (float i = 0.0f; i < 1.0f; i += timeStep) {
-		printf("Time elapsed: %4.4f\n", lguTime() - timeStart);
-		panel.display();
-    }
-
-	timeStart = lguTime();
-	while (lguTime() - timeStart < 2.0f) {
-		printf("X: %4.4f, Y: %4.4f, Z: %4.4f, Temp(F): %4.4f\n", mpu6050.aX(), mpu6050.aY(), mpu6050.aZ(), mpu6050.tempF());
-		lguSleep(0.01f);
-	}
-
+	panel.clearPanel();
+	panel.display();
 	return 0;
 }

@@ -1,10 +1,11 @@
 #include "App.h"
 
-App::App(uint8_t id, LEDPanel* panel, Accelerometer* accelerometer)
+App::App(uint8_t id, LEDPanel* panel, Accelerometer* accelerometer, IOController* ioc)
 {
 	this->appId = appId;
 	this->panel = panel;
 	this->accelerometer = accelerometer;
+	this->ioc = ioc;
 	this->initialized = false;
 }
 
@@ -33,13 +34,45 @@ void App::deInitialize()
 		return;
 }
 
+int8_t App::loop() {
+    // Enable running flag
+    running = true;
+
+    // Clear I/O states
+    ioc->clearButtonStates();
+    
+    initialize();
+    while (running) {
+        update();
+    }
+    deInitialize();
+
+	// Print ending frame rate
+	printf("\tFramerate: %4.2f\n", 1.0f / getFrameTime());
+
+	// Clear panel and refresh
+	panel->clearPanel();
+	panel->display();
+
+    // Add brief delay before exiting
+    ioc->sleep(APP_SWITCH_TIME);
+
+    // Return exit code
+    return exitCode;
+}
+
+void App::stop(int8_t exitCode) {
+    running = false;
+    this->exitCode = exitCode;
+}
+
 void App::update()
 {
-	double startTime = lguTime();
+	double startTime = ioc->getTime();
 	preUpdate();
 	processUpdate();
 	postUpdate();
-	autoUpdateFrameRate(lguTime() - startTime);
+	autoUpdateFrameRate(ioc->getTime() - startTime);
 	waitUntilNextFrame(startTime);
 }
 
@@ -53,8 +86,13 @@ void App::autoUpdateFrameRate(double frameTime)
 	}
 }
 
+float App::getFrameTime()
+{
+	return targetFrameTime;
+}
+
 void App::waitUntilNextFrame(double startTime) {
-	while (lguTime() - startTime < targetFrameTime) {
+	while (ioc->getTime() - startTime < targetFrameTime) {
 		processInputs();
 	}
 }

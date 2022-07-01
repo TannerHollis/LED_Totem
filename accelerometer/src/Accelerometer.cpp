@@ -147,7 +147,6 @@ void Accelerometer::setAccelerometerScaling(uint8_t scale)
 {
     MPU6050_setFullScaleAccelRange(scale);
     getAccelerometerScaling();
-    printf("Accel scaling changed to %i\n", scale);
 }
 
 void Accelerometer::getGyroScaling() 
@@ -214,7 +213,6 @@ void Accelerometer::setAccelerometerAutoScale(float threshold)
     else {
         accelerometer.auto_scale = (1.0f + threshold) / 2.0f * INT16_MAX;
     }
-    printf("Accel auto scale set to %i\n", accelerometer.auto_scale);
 }
 
 void Accelerometer::gyroAutoScale()

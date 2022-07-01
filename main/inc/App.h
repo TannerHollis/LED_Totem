@@ -4,26 +4,28 @@
 #include <Box2D/Box2D.h>
 #include <LEDPanel.h>
 #include <Accelerometer.h>
-#include <stdint.h>
+#include <IOController.h>
 #include <lgpio.h>
+#include <stdint.h>
 
 #define FRAME_TIME_INC 0.001f
 #define FRAME_TIME_THRESHOLD 0.25f
+#define APP_SWITCH_TIME 0.05f
 
 class App
 {
 public :
-	App(uint8_t id, LEDPanel* panel, Accelerometer* accelerometer);
+	App(uint8_t id, LEDPanel* panel, Accelerometer* accelerometer, IOController* ioc);
 	~App();
 	
-	// Initialize App
-	void initialize();
+    // Loop App
+    int8_t loop();
 
-	// Deinitialize App
-	void deInitialize();
+    // Stop App
+    void stop(int8_t exitCode);
 
-	// Update App
-	void update();
+	// Get frame time
+	float getFrameTime();
 
 	// LED Panel pointer
 	LEDPanel* panel;
@@ -31,7 +33,19 @@ public :
 	// Accelerometer pointer
 	Accelerometer* accelerometer;
 
+	// I/O Controller pointer
+	IOController* ioc;
+
 private:
+    // Update App
+    void update();
+
+    // Initialize App
+    void initialize();
+
+    // Deinitialize App
+    void deInitialize();
+
 	// Process initialization
 	virtual void initializeRun() {
 		// Do nothing.
@@ -74,6 +88,10 @@ private:
 	// App ID and initialization flag
 	uint8_t appId;
 	bool initialized = false;
+
+    // App running flag
+    bool running = false;
+    int8_t exitCode = 0;
 };
 
 #endif
