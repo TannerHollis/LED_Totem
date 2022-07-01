@@ -22,5 +22,8 @@ add_subdirectory(Box2D)
 # Add iocontroller directory
 add_subdirectory(iocontroller)
 
+# Add libconfig directory
+add_subdirectory(libconfig)
+
 # Add main directory
 add_subdirectory(main)

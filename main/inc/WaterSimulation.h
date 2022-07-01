@@ -3,19 +3,20 @@
 
 #include <App.h>
 
-#define PARTICLE_RADIUS 0.5f
-#define PARTICLE_DAMPING 0.2f
-
 class WaterSimulation : public App
 {
 public :
     WaterSimulation(uint8_t id,
-		LEDPanel* panel,
-		Accelerometer* accelerometer,
-		IOController* ioc,
-		b2World* world) : App(id, panel, accelerometer, ioc)
+		TotemController_t* tc,
+		b2World* world) : App(id, tc)
 	{
 		this->world = world;
+		waterSizeWidth = settings->getFloat("apps.waterSimulation.water.size.width");
+		waterSizeHeight = settings->getFloat("apps.waterSimulation.water.size.height");
+		waterParticleRadius = settings->getFloat("apps.waterSimulation.water.particleRadius");
+		waterParticleDamping = settings->getFloat("apps.waterSimulation.water.particleDamping");
+		waterParticleDensity = settings->getFloat("apps.waterSimulation.water.particleDensity");
+		waterParticleFlag = settings->getUInt("apps.waterSimulation.water.particleFlag");
 	}
 	~WaterSimulation()
 	{
@@ -72,19 +73,20 @@ private:
 		// Define particle system
 		b2ParticleSystemDef particleSystemDef;
 		particleSystem = world->CreateParticleSystem(&particleSystemDef);
-		particleSystem->SetRadius(PARTICLE_RADIUS);
-		particleSystem->SetDamping(PARTICLE_DAMPING);
+		particleSystem->SetRadius(waterParticleRadius);
+		particleSystem->SetDamping(waterParticleDamping);
+		particleSystem->SetDensity(waterParticleDensity);
 
 		// Define particle group shape
-		particleShape.SetAsBox(x / 4.0f, y / 4.0f, b2Vec2(x * 0.5f, y * 0.5f), 0.0f);
+		particleShape.SetAsBox(waterSizeWidth / 2.0f, waterSizeHeight / 2.0f, b2Vec2(x * 0.5f, y * 0.5f), 0.0f);
 
 		// Define particle group definition
 		b2ParticleGroupDef particleGroupDef;
-		particleGroupDef.flags = 0; // Water particles
+		particleGroupDef.flags = waterParticleFlag; // Water particles
 		particleGroupDef.shape = &particleShape;
 		particleGroup = particleSystem->CreateParticleGroup(particleGroupDef);
 
-		printf("Particles created: %u\n", particleGroup->GetParticleCount());
+		printf("\tParticles created: %u\n", particleGroup->GetParticleCount());
 	}
 
 	void deInitializeRun()
@@ -140,10 +142,10 @@ private:
 	// Process Inputs
 	void processInputs()
 	{
-		if (ioc->isButtonLongHeld(INPUT_BTTN_NEXT)) {
+		if (ioc->isNextLongHeld()) {
 			stop(1);
 		}
-		else if (ioc->isButtonLongHeld(INPUT_BTTN_PREVIOUS)) {
+		else if (ioc->isPreviousLongHeld()) {
 			stop(-1);
 		}
 	}
@@ -162,6 +164,15 @@ private:
 	// Box2D simulation vars
 	int32 velocityIterations = 6;
 	int32 positionIterations = 2;
+
+	// Simulation vars initialized with settings
+	float waterSizeWidth;
+	float waterSizeHeight;
+	uint8_t waterParticleFlag;
+	float waterParticleRadius;
+	float waterParticleDamping;
+	float waterParticleDensity;
+	float waterParticleMaxVelocity;
 };
 
 #endif

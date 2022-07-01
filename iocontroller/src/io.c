@@ -1,81 +1,41 @@
 #include "io.h"
 
-uint8_t getButtonShortPress(double lastUpdateTime)
+uint8_t getButtonShortPress(button_t* button, inputs_t* io)
 {
-    return (lguTime() - lastUpdateTime > INPUT_SHORT_PRESS) || !getButtonLongHold(lastUpdateTime);
+    return (lguTime() - button->lastUpdateTime > io->inputShortPress) || !getButtonLongHold(button, io);
 }
 
-uint8_t getButtonLongHold(double lastUpdateTime)
+uint8_t getButtonLongHold(button_t* button, inputs_t* io)
 {
-    return lguTime() - lastUpdateTime > INPUT_LONG_HOLD;
+    return lguTime() - button->lastUpdateTime > io->inputLongHold;
 }
 
 void ioCallback(int e, lgGpioAlert_p evt, void* data)
 {
     inputs_t* io = (inputs_t*)data;
     for (uint8_t i = 0; i < e; i++) {
-        switch (evt[i].report.gpio)
-        {
-        case INPUT_BTTN_NEXT:
-            io->next.state = evt[i].report.level;
-            if ((io->next.state && INPUT_BTTN_NEXT_STATE) || (!io->next.state && !INPUT_BTTN_NEXT_STATE)) {
-                io->next.shortPress = 0;
-                io->next.longHold = 0;
-            }
-            else {
-                io->next.shortPress = getButtonShortPress(io->next.lastUpdateTime);
-                io->next.longHold = getButtonLongHold(io->next.lastUpdateTime);
-            }
-            io->next.lastUpdateTime = lguTime();
-            return;
-        case INPUT_BTTN_PREVIOUS:
-            io->previous.state = evt[i].report.level;
-            if ((io->previous.state && INPUT_BTTN_PREVIOUS_STATE) || (!io->previous.state && !INPUT_BTTN_PREVIOUS_STATE)) {
-                io->previous.shortPress = 0;
-                io->previous.longHold = 0;
-            }
-            else {
-                io->previous.shortPress = getButtonShortPress(io->previous.lastUpdateTime);
-                io->previous.longHold = getButtonLongHold(io->previous.lastUpdateTime);
-            }
-            io->previous.lastUpdateTime = lguTime();
-            return;
-        case INPUT_BTTN_GENERAL:
-            io->general.state = evt[i].report.level;
-            if ((io->general.state && INPUT_BTTN_GENERAL_STATE) || (!io->general.state && !INPUT_BTTN_GENERAL_STATE)) {
-                io->general.shortPress = 0;
-                io->general.longHold = 0;
-            }
-            else {
-                io->general.shortPress = getButtonShortPress(io->general.lastUpdateTime);
-                io->general.longHold = getButtonLongHold(io->general.lastUpdateTime);
-            }
-            io->general.lastUpdateTime = lguTime();
-            return;
-        case INPUT_BTTN_ENCODER :
-            io->rotaryEncoder.button.state = evt[i].report.level;
-            if ((io->rotaryEncoder.button.state && INPUT_BTTN_ENCODER_STATE) || (!io->rotaryEncoder.button.state && !INPUT_BTTN_ENCODER_STATE)) {
-                io->rotaryEncoder.button.shortPress = 0;
-                io->rotaryEncoder.button.longHold = 0;
-            }
-            else {
-                io->rotaryEncoder.button.shortPress = getButtonShortPress(io->rotaryEncoder.button.lastUpdateTime);
-                io->rotaryEncoder.button.longHold = getButtonLongHold(io->rotaryEncoder.button.lastUpdateTime);
-            }
-            io->rotaryEncoder.button.lastUpdateTime = lguTime();
-            return;
-        case INPUT_ENCODER_A:
+        char gpio = evt[i].report.gpio;
+        if (gpio == io->next.pin) {
+            updateButton(&io->next, evt[i].report.level, io);
+        }
+        if (gpio == io->previous.pin) {
+            updateButton(&io->previous, evt[i].report.level, io);
+        }
+        if (gpio == io->general.pin) {
+            updateButton(&io->general, evt[i].report.level, io);
+        }
+        if (gpio == io->rotaryEncoder.button.pin) {
+            updateButton(&io->rotaryEncoder.button, evt[i].report.level, io);
+        }
+        if (gpio == io->rotaryEncoder.a.pin) {
             io->rotaryEncoder.a.current = evt[i].report.level;
             io->rotaryEncoder.updateFlag |= 1;
             io->rotaryEncoder.lastDetent = lguTime();
-            return;
-        case INPUT_ENCODER_B:
+        }
+        if (gpio == io ->rotaryEncoder.b.pin) {
             io->rotaryEncoder.b.current = evt[i].report.level;
             io->rotaryEncoder.updateFlag |= 1;
             io->rotaryEncoder.lastDetent = lguTime();
-            return;
-        default:
-            return;
         }
     }
     if (io->rotaryEncoder.updateFlag) {
@@ -83,10 +43,26 @@ void ioCallback(int e, lgGpioAlert_p evt, void* data)
     }
 }
 
-void updateRotaryEncoder(inputs_t* inputs) {
+void updateButton(button_t* button, uint8_t state, inputs_t* io)
+{
+    button->state = state;
+    if ((button->state && !button->invert) || (!button->state && button->invert)) {
+        button->shortPress = 0;
+        button->longHold = 0;
+    }
+    else {
+        button->shortPress = getButtonShortPress(button, io);
+        button->longHold = getButtonLongHold(button, io);
+    }
+    button->lastUpdateTime = lguTime();
+    return;
+}
+
+void updateRotaryEncoder(inputs_t* io)
+{
     // Save encoder states
-    uint8_t currentState = (inputs->rotaryEncoder.b.current << 1) | inputs->rotaryEncoder.a.current;
-    uint8_t lastState = (inputs->rotaryEncoder.b.last << 1) | inputs->rotaryEncoder.a.last;
+    uint8_t currentState = (io->rotaryEncoder.b.current << 1) | io->rotaryEncoder.a.current;
+    uint8_t lastState = (io->rotaryEncoder.b.last << 1) | io->rotaryEncoder.a.last;
 
     // Declare direction
     float direction = 0;
@@ -165,23 +141,23 @@ void updateRotaryEncoder(inputs_t* inputs) {
     }
 
     // Add to rotary encoder linear position
-    inputs->rotaryEncoder.pos.linear += direction * ENCODER_LINEAR_INC;
-    if (inputs->rotaryEncoder.pos.linear > 1.0f)
-        inputs->rotaryEncoder.pos.linear = 1.0f;
-    else if (inputs->rotaryEncoder.pos.linear < 0.0f)
-        inputs->rotaryEncoder.pos.linear = 0.0f;
+    io->rotaryEncoder.pos.linear += direction * io->rotaryEncoder.linearInc;
+    if (io->rotaryEncoder.pos.linear > 1.0f)
+        io->rotaryEncoder.pos.linear = 1.0f;
+    else if (io->rotaryEncoder.pos.linear < 0.0f)
+        io->rotaryEncoder.pos.linear = 0.0f;
 
     // Add to rotary encoder angular position
-    inputs->rotaryEncoder.pos.angle += direction * 1.0f / (2 * ENCODER_PPR);
-    if (inputs->rotaryEncoder.pos.linear > 360.0f)
-        inputs->rotaryEncoder.pos.linear = 0.0f;
-    else if (inputs->rotaryEncoder.pos.linear < 0.0f)
-        inputs->rotaryEncoder.pos.linear = 360.0f;
+    io->rotaryEncoder.pos.angle += direction / (720.0f / io->rotaryEncoder.ppr);
+    if (io->rotaryEncoder.pos.linear > 360.0f)
+        io->rotaryEncoder.pos.linear = 0.0f;
+    else if (io->rotaryEncoder.pos.linear < 0.0f)
+        io->rotaryEncoder.pos.linear = 360.0f;
 
     // Shift current values to last 
-    inputs->rotaryEncoder.a.last = inputs->rotaryEncoder.a.current;
-    inputs->rotaryEncoder.b.last = inputs->rotaryEncoder.b.current;
+    io->rotaryEncoder.a.last = io->rotaryEncoder.a.current;
+    io->rotaryEncoder.b.last = io->rotaryEncoder.b.current;
 
     // Clear update flag
-    inputs->rotaryEncoder.updateFlag = 0;
+    io->rotaryEncoder.updateFlag = 0;
 }

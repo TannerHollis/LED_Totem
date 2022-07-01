@@ -1,12 +1,14 @@
 #include "App.h"
 
-App::App(uint8_t id, LEDPanel* panel, Accelerometer* accelerometer, IOController* ioc)
+App::App(uint8_t id, TotemController_t* tc)
 {
 	this->appId = appId;
-	this->panel = panel;
-	this->accelerometer = accelerometer;
-	this->ioc = ioc;
+	this->settings = tc->settings;
+	this->panel = tc->panel;
+	this->accelerometer = tc->mpu;
+	this->ioc = tc->ioc;
 	this->initialized = false;
+	this->programRunning = &tc->running;
 }
 
 App::~App()
@@ -42,7 +44,7 @@ int8_t App::loop() {
     ioc->clearButtonStates();
     
     initialize();
-    while (running) {
+    while (running && *programRunning) {
         update();
     }
     deInitialize();

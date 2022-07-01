@@ -1,6 +1,12 @@
 #ifndef ACCELEROMETER_H
 #define ACCELEROMETER_H
 
+#include <Setting.h>
+#include <lgpio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <cmath>
+
 extern "C" {
 #include "mpu6050.h"
 }
@@ -8,7 +14,7 @@ extern "C" {
 class Accelerometer
 {
 public:
-    Accelerometer();
+    Accelerometer(Setting* settings);
     ~Accelerometer();
 
     // Accelerometer data
@@ -32,7 +38,6 @@ public:
     void setGyroAutoScale(float threshold);
     
 private:
-    void updateAllValues();
     void updateAccelerometer();
     void updateGyro();
     void updateTemp();

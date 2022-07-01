@@ -1,6 +1,7 @@
 # Include headers
 include_directories(${WaterSimulation_SOURCE_DIR}/accelerometer/inc
-					${WaterSimulation_SOURCE_DIR}/mpu6050/inc)
+					${WaterSimulation_SOURCE_DIR}/mpu6050/inc
+					${WaterSimulation_SOURCE_DIR}/libconfig/inc)
 
 #Include WS2812 source
 link_directories(${WaterSimulation_SOURCE_DIR}/mpu6050/src)

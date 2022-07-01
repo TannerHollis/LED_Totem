@@ -3,20 +3,21 @@
 
 #include <App.h>
 
-#define DEFAULT_BALL_COUNT 8
 #define DEFAULT_BALL_MAX 50
-#define DEFAULT_BALL_BOUNCINESS 0.7f
 
 class BouncingBalls : public App
 {
 public :
 	BouncingBalls(uint8_t id, 
-		LEDPanel* panel,
-		Accelerometer* accelerometer,
-		IOController* ioc,
-		b2World* world) : App(id, panel, accelerometer, ioc)
+		TotemController_t* tc,
+		b2World* world) : App(id, tc)
 	{
 		this->world = world;
+		ballDefaultCount = settings->getUInt("apps.bouncingBalls.defaultBallCount");
+		ballBounciness = settings->getFloat("apps.bouncingBalls.ballBounciness");
+		ballFriction = settings->getFloat("apps.bouncingBalls.ballFriction");
+		ballDensity = settings->getFloat("apps.bouncingBalls.ballDensity");
+		ballRadius = settings->getFloat("apps.bouncingBalls.ballRadius");
 	}
 	~BouncingBalls()
 	{
@@ -42,23 +43,22 @@ public :
 				float x = randomFloat(0.0f, panel->getWidth());
 				float y = randomFloat(0.0f, panel->getHeight());
 				bodyDef.position.Set(x, y);
-				bodyDef.angle = 0.0f;
 				balls[i] = world->CreateBody(&bodyDef);
 
 				// Create random ball color
 				ballColors[i] = Color::ColorLerpRainbow(0.0f, 1.0f, randomFloat(0.0f, 1.0f));
 
 				// Define ball radius
-				ballShape.m_radius = 0.5f;
+				ballShape.m_radius = ballRadius;
 
 				// Define the dynamic body fixture
 				b2FixtureDef fixtureDef;
 				fixtureDef.shape = &ballShape;
 
 				// Define ball density, friction and bounciness
-				fixtureDef.density = 1.0f;
-				fixtureDef.friction = 0.3f;
-				fixtureDef.restitution = DEFAULT_BALL_BOUNCINESS;
+				fixtureDef.density = ballDensity;
+				fixtureDef.friction = ballFriction;
+				fixtureDef.restitution = ballBounciness;
 
 				// Add shape to body
 				balls[i]->CreateFixture(&fixtureDef);
@@ -93,7 +93,7 @@ private:
 		addEdges();
 
 		// Add balls to world
-		addBalls(DEFAULT_BALL_COUNT);
+		addBalls(ballDefaultCount);
 	}
 
 	void addEdges()
@@ -169,16 +169,16 @@ private:
 	// Process Inputs
 	void processInputs()
 	{
-		if (ioc->isButtonLongHeld(INPUT_BTTN_NEXT)) {
+		if (ioc->isNextLongHeld()) {
 			stop(1);
 		}
-		else if (ioc->isButtonLongHeld(INPUT_BTTN_PREVIOUS)) {
+		else if (ioc->isPreviousLongHeld()) {
 			stop(-1);
 		}
-		else if (ioc->isButtonShortPressed(INPUT_BTTN_NEXT)) {
+		else if (ioc->isNextShortPressed()) {
 			addBalls(1);
 		}
-		else if (ioc->isButtonShortPressed(INPUT_BTTN_PREVIOUS)) {
+		else if (ioc->isPreviousShortPressed()) {
 			removeBalls(1);
 		}
 	}
@@ -200,6 +200,13 @@ private:
 
 	// Simulation vars
 	int8_t ball_count = 0;
+
+	// Simulation vars initialized with settings
+	float ballDefaultCount;
+	float ballBounciness;
+	float ballFriction;
+	float ballDensity;
+	float ballRadius;
 };
 
 #endif

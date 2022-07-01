@@ -1,5 +1,6 @@
 # Include headers
-include_directories(${WaterSimulation_SOURCE_DIR}/iocontroller/inc)
+include_directories(${WaterSimulation_SOURCE_DIR}/iocontroller/inc
+					${WaterSimulation_SOURCE_DIR}/libconfig/inc)
 
 # Output library
 add_library(iocontroller IOController.cpp io.c)

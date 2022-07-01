@@ -3,23 +3,24 @@
 
 #include <App.h>
 
-#define PARTICLE_RADIUS 0.5f
-#define PARTICLE_DAMPING 0.2f
-#define WATER_VELOCITY_MAX 1000.0f
-#define WHEEL_SIZE 0.7f
-#define WHEEL_TORQUE_MAX 10000.0f
-#define WHEEL_SPEED_MAX 5.0f
-
 class WaterWheel : public App
 {
 public :
 	WaterWheel(uint8_t id,
-		LEDPanel* panel,
-		Accelerometer* accelerometer,
-		IOController* ioc,
-		b2World* world) : App(id, panel, accelerometer, ioc)
+		TotemController_t* tc,
+		b2World* world) : App(id, tc)
 	{
 		this->world = world;
+		waterSizeWidth = settings->getFloat("apps.waterWheel.water.size.width");
+		waterSizeHeight = settings->getFloat("apps.waterWheel.water.size.height");
+		waterParticleFlag = settings->getUInt("apps.waterWheel.water.particleFlag");
+		waterParticleRadius = settings->getFloat("apps.waterWheel.water.particleRadius");
+		waterParticleDamping = settings->getFloat("apps.waterWheel.water.particleDamping");
+		waterParticleDensity = settings->getFloat("apps.waterWheel.water.particleDensity");
+		waterParticleMaxVelocity = settings->getFloat("apps.waterWheel.water.particleMaxVelocity");
+		waterWheelLength = settings->getFloat("apps.waterWheel.wheel.length");
+		waterWheelMaxTorque = settings->getFloat("apps.waterWheel.wheel.maxTorque");
+		waterWheelMaxSpeed = settings->getFloat("apps.waterWheel.wheel.maxSpeed");
 	}
 	~WaterWheel()
 	{
@@ -74,20 +75,14 @@ private:
 	void addWaterWheel()
 	{
 		// Define water wheel shape
-		float wheelLength;
-		if (panel->getWidth() >= panel->getHeight()) {
-			wheelLength = WHEEL_SIZE * panel->getHeight();
-		}
-		else {
-			wheelLength = WHEEL_SIZE * panel->getWidth();
-		}
+		float wheelLength = waterWheelLength;
 		float wheelWidth = 0.2f;
 
 		// Define water wheel shape
 		waterWheelShape.SetAsBox(wheelWidth / 2.0f, wheelLength / 2.0f);
 
 		// Define water wheel center shape
-		waterWheelCenterShape.m_radius = 0.25f;
+		waterWheelCenterShape.m_radius = 0.1f;
 
 		// Place water wheel center
 		b2BodyDef bodyDef;
@@ -108,7 +103,7 @@ private:
 		revoluteJointDef.bodyB = waterWheelCenter;
 		revoluteJointDef.localAnchorA.Set(0, 0);
 		revoluteJointDef.localAnchorB.Set(0, 0);
-		revoluteJointDef.maxMotorTorque = WHEEL_TORQUE_MAX;
+		revoluteJointDef.maxMotorTorque = waterWheelMaxTorque;
 		revoluteJointDef.motorSpeed = waterWheelSpeed;
 		revoluteJointDef.enableMotor = true;
 		revoluteJointDef.collideConnected = false;
@@ -123,17 +118,18 @@ private:
 		// Define particle system
 		b2ParticleSystemDef particleSystemDef;
 		particleSystem = world->CreateParticleSystem(&particleSystemDef);
-		particleSystem->SetRadius(PARTICLE_RADIUS);
-		particleSystem->SetDamping(PARTICLE_DAMPING);
+		particleSystem->SetRadius(waterParticleRadius);
+		particleSystem->SetDamping(waterParticleDamping);
+		particleSystem->SetDensity(waterParticleDensity);
 
 		// Define particle group shape
 		b2ParticleGroupDef particleGroupDef;
-		particleShape.SetAsBox(x / 4.0f, y / 4.0f, b2Vec2(x * 0.5f, y * 0.5f), 0.0f);
-		particleGroupDef.flags = 0; // Water particles
+		particleShape.SetAsBox(waterSizeWidth / 2.0f, waterSizeHeight / 2.0f, b2Vec2(x * 0.5f, y * 0.5f), 0.0f);
+		particleGroupDef.flags = waterParticleFlag; // Water particles
 		particleGroupDef.shape = &particleShape;
 		particleGroup = particleSystem->CreateParticleGroup(particleGroupDef);
 
-		printf("Particles created: %u\n", particleGroup->GetParticleCount());
+		printf("\tParticles created: %u\n", particleGroup->GetParticleCount());
 	}
 
 	void deInitializeRun()
@@ -202,7 +198,7 @@ private:
 		b2Vec2* positions = particleSystem->GetPositionBuffer();
 		b2Vec2* velocities = particleSystem->GetVelocityBuffer();
 		for (uint32_t i = 0; i < particleSystem->GetParticleCount(); i++) {
-			panel->setPixel(positions[i].x, positions[i].y, Color::ColorLerpRainbow(0.0f, WATER_VELOCITY_MAX, velocities[i].LengthSquared()));
+			panel->setPixel(positions[i].x, positions[i].y, Color::ColorLerpRainbow(0.0f, waterParticleMaxVelocity, velocities[i].LengthSquared()));
 		}
 
 		// Set water wheel LEDs
@@ -225,13 +221,13 @@ private:
 	// Process Inputs
 	void processInputs()
 	{
-		if (ioc->isButtonLongHeld(INPUT_BTTN_NEXT)) {
+		if (ioc->isNextLongHeld()) {
 			stop(1);
 		}
-		else if (ioc->isButtonLongHeld(INPUT_BTTN_PREVIOUS)) {
+		else if (ioc->isPreviousLongHeld()) {
 			stop(-1);
 		}
-		waterWheelSpeed = (ioc->getEncoderPositionLinear() * 2.0f - 1.0f) * WHEEL_SPEED_MAX;
+		waterWheelSpeed = (ioc->getEncoderPositionLinear() * 2.0f - 1.0f) * waterWheelMaxSpeed;
 	}
 
 	b2Vec2 transformVector(b2Vec2 in, float angle, b2Vec2 offset)
@@ -262,7 +258,19 @@ private:
 	int32 positionIterations = 2;
 
 	// Simulation vars
-	float waterWheelSpeed = 1.0f; // rad/sec
+	float waterWheelSpeed = 0.0f; // rad/sec
+
+	// Simulation vars initialized with settings
+	float waterSizeWidth;
+	float waterSizeHeight;
+	uint8_t waterParticleFlag;
+	float waterParticleRadius;
+	float waterParticleDamping;
+	float waterParticleDensity;
+	float waterParticleMaxVelocity;
+	float waterWheelLength;
+	float waterWheelMaxTorque;
+	float waterWheelMaxSpeed;
 };
 
 #endif

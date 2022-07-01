@@ -4,23 +4,25 @@ ws2811_t ws2811;
 
 ws2811_led_t* pixels;
 
-LEDPanel::LEDPanel(uint8_t panelsX, uint8_t panelsY, uint16_t panelWidth, uint16_t panelHeight) :
-    panelsX(panelsX),
-    panelsY(panelsY),
-    panelWidth(panelWidth),
-    panelHeight(panelHeight),
-    width(panelsX * panelWidth),
-    height(panelsY * panelHeight)
+LEDPanel::LEDPanel(Setting* settings)
 {  
+    // Initialize with settings
+    panelsX = settings->getUInt("ledpanel.size.panelsX");
+    panelsY = settings->getUInt("ledpanel.size.panelsY");
+    panelWidth = settings->getUInt("ledpanel.size.panelWidth");
+    panelHeight = settings->getUInt("ledpanel.size.panelHeight");
+    width = panelsX * panelWidth;
+    height = panelsY * panelHeight;
+
     // Initialize the controller properties
     ws2811.freq = WS2811_TARGET_FREQ;
     ws2811.dmanum = DMA;
 
     // Initialize controller, channel 0 properties
-    ws2811.channel[0].gpionum = GPIO_PIN;
+    ws2811.channel[0].gpionum = settings->getUInt("ledpanel.outputPin");
     ws2811.channel[0].count = panelsX * panelsY * panelWidth * panelHeight;
-    ws2811.channel[0].invert = 0;
-    ws2811.channel[0].brightness = 55;
+    ws2811.channel[0].invert = settings->getBool("ledpanel.invert");
+    ws2811.channel[0].brightness = settings->getUInt("ledpanel.brightness");
     ws2811.channel[0].strip_type = WS2812_STRIP;
 
     // Initialize second channel, NOT USED
@@ -33,8 +35,7 @@ LEDPanel::LEDPanel(uint8_t panelsX, uint8_t panelsY, uint16_t panelWidth, uint16
     ws2811.channel[0].leds = pixels;
 
     // Initialize WS2811 controller
-    ws2811_return_t ret;
-    ret = ws2811_init(&ws2811);
+    ws2811_return_t ret = ws2811_init(&ws2811);
 
     if (ret != WS2811_SUCCESS) {
         printf("WS2811 Initialization failed.\n");

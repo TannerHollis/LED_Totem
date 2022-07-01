@@ -1,14 +1,12 @@
 #include "Accelerometer.h"
-#include <lgpio.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <cmath>
 
-Accelerometer::Accelerometer()
+Accelerometer::Accelerometer(Setting* settings)
 {
     MPU6050_initialize(MPU6050_DEFAULT_ADDRESS);
     getAccelerometerScaling();
     getGyroScaling();
+    setAccelerometerAutoScale(settings->getFloat("mpu.accelerometerAutoScaleThreshold"));
+    setGyroAutoScale(settings->getFloat("mpu.gyroAutoScaleThreshold"));
 }
 
 Accelerometer::~Accelerometer()

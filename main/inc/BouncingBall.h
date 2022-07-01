@@ -3,21 +3,22 @@
 
 #include <App.h>
 
-#define BALL_POS_HISTORY 125
 #define BALL_POS_HISTORY_MAX 200
-#define BALL_VELOCITY_MAX 1000.0f
-#define DEFAULT_BALL_BOUNCINESS 0.7f
 
 class BouncingBall : public App
 {
 public :
 	BouncingBall(uint8_t id, 
-		LEDPanel* panel,
-		Accelerometer* accelerometer,
-		IOController* ioc,
-		b2World* world) : App(id, panel, accelerometer, ioc)
+		TotemController_t* tc,
+		b2World* world) : App(id, tc)
 	{
 		this->world = world;
+		ballPositionHistory = settings->getUInt("apps.bouncingBall.ballTrailLength");
+		ballMaxVeloctiy = settings->getFloat("apps.bouncingBall.ballMaxVelocity");
+		ballBounciness = settings->getFloat("apps.bouncingBall.ballBounciness");
+		ballFriction = settings->getFloat("apps.bouncingBall.ballFriction");
+		ballDensity = settings->getFloat("apps.bouncingBall.ballDensity");
+		ballRadius = settings->getFloat("apps.bouncingBall.ballRadius");
 	}
 	~BouncingBall()
 	{
@@ -39,16 +40,16 @@ private:
 		ball = world->CreateBody(&bodyDef);
 
 		// Define ball radius
-		ballShape.m_radius = 0.5f;
+		ballShape.m_radius = ballRadius;
 
 		// Define the dynamic body fixture
 		b2FixtureDef fixtureDef;
 		fixtureDef.shape = &ballShape;
 
 		// Define ball density, friction and bounciness
-		fixtureDef.density = 1.0f;
-		fixtureDef.friction = 0.1f;
-		fixtureDef.restitution = 0.8f;
+		fixtureDef.density = ballDensity;
+		fixtureDef.friction = ballFriction;
+		fixtureDef.restitution = ballBounciness;
 
 		// Add shape to body
 		ball->CreateFixture(&fixtureDef);
@@ -138,7 +139,7 @@ private:
 
 		// Update tail
 		uint16_t diff = (ballPositionHead - ballPositionTail > 0) ? ballPositionHead - ballPositionTail : ballPositionHead + BALL_POS_HISTORY_MAX - ballPositionTail;
-		if (diff == BALL_POS_HISTORY) {
+		if (diff == ballPositionHistory) {
 			if (ballPositionTail == BALL_POS_HISTORY_MAX - 1) {
 				ballPositionTail = 0;
 			}
@@ -149,25 +150,25 @@ private:
 
 		// Add new position
 		ballPositions[ballPositionHead] = ball->GetPosition();
-		ballColors[ballPositionHead] = Color::ColorLerpRainbow(0.0f, BALL_VELOCITY_MAX, ball->GetLinearVelocity().LengthSquared());
+		ballColors[ballPositionHead] = Color::ColorLerpRainbow(0.0f, ballMaxVeloctiy, ball->GetLinearVelocity().LengthSquared());
 
 		// Set pixels and fade tail
 		if (ballPositionHead - ballPositionTail >= 0) {
-			float scale = 1.0f / BALL_POS_HISTORY;
+			float scale = 1.0f / ballPositionHistory;
 			for (uint16_t i = ballPositionTail; i < ballPositionHead; i++) {
 				panel->setPixel(ballPositions[i].x, ballPositions[i].y, ballColors[i].Scale(scale));
-				scale += 1.0f / BALL_POS_HISTORY;
+				scale += 1.0f / ballPositionHistory;
 			}
 		}
 		else {
-			float scale = 1.0f / BALL_POS_HISTORY;
+			float scale = 1.0f / ballPositionHistory;
 			for (uint16_t i = ballPositionTail; i < BALL_POS_HISTORY_MAX; i++) {
 				panel->setPixel(ballPositions[i].x, ballPositions[i].y, ballColors[i].Scale(scale));
-				scale += 1.0f / BALL_POS_HISTORY;
+				scale += 1.0f / ballPositionHistory;
 			}
 			for (uint16_t i = 0; i < ballPositionHead; i++) {
 				panel->setPixel(ballPositions[i].x, ballPositions[i].y, ballColors[i].Scale(scale));
-				scale += 1.0f / BALL_POS_HISTORY;
+				scale += 1.0f / ballPositionHistory;
 			}
 		}
 		
@@ -178,10 +179,10 @@ private:
 	// Process Inputs
 	void processInputs()
 	{
-		if (ioc->isButtonLongHeld(INPUT_BTTN_NEXT)) {
+		if (ioc->isNextLongHeld()) {
 			stop(1);
 		}
-		else if (ioc->isButtonLongHeld(INPUT_BTTN_PREVIOUS)) {
+		else if (ioc->isPreviousLongHeld()) {
 			stop(-1);
 		}
 	}
@@ -205,6 +206,14 @@ private:
 	Color ballColors[BALL_POS_HISTORY_MAX];
 	uint16_t ballPositionHead = 0;
 	uint16_t ballPositionTail = 0;
+
+	// Simulation vars initialized with settings
+	uint16_t ballPositionHistory;
+	float ballMaxVeloctiy;
+	float ballBounciness;
+	float ballFriction;
+	float ballDensity;
+	float ballRadius;
 };
 
 #endif

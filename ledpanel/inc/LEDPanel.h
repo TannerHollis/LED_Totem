@@ -1,6 +1,7 @@
 #ifndef LEDPANEL_H
 #define LEDPANEL_H
 
+#include <Setting.h>
 #include <ws2811.h>
 #include <Color.h>
 #include <stdint.h>
@@ -15,7 +16,7 @@
 class LEDPanel
 {
 public:
-    LEDPanel(uint8_t panelsX, uint8_t panelsY, uint16_t panelWidth, uint16_t panelHeight);
+    LEDPanel(Setting* settings);
     ~LEDPanel();
     
     // Show LED 

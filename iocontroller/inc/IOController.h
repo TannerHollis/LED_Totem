@@ -1,11 +1,11 @@
 #ifndef IOCONTROLLER_H
 #define IOCONTROLLER_H
 
+#include <Setting.h>
 #include <lgpio.h>
 #include <cstdint>
 #include <cstdlib>
 #include <cstdio>
-#include "io_config.h"
 
 extern "C" {
 #include "io.h"
@@ -14,15 +14,24 @@ extern "C" {
 class IOController
 {
 public:
-    IOController();
+    IOController(Setting* settings);
     ~IOController();
 
-    // Initialize IO Controller
-    void initialize();
+    // Next button handling
+    bool isNextLongHeld();
+    bool isNextShortPressed();
 
-    // Get button states
-    bool isButtonShortPressed(uint8_t button);
-    bool isButtonLongHeld(uint8_t button);
+    // Previous button handling
+    bool isPreviousLongHeld();
+    bool isPreviousShortPressed();
+
+    // General button handling
+    bool isGeneralLongHeld();
+    bool isGeneralShortPressed();
+
+    // Rotary encoder button handling
+    bool isRotaryButtonLongHeld();
+    bool isRotaryButtonShortPressed();
 
     // Clear button states
     void clearButtonStates();
@@ -38,7 +47,13 @@ public:
     void sleep(double time);
 
 private:
-    
+    // Initialize IO Controller
+    void initialize(Setting* settings);
+
+    // Get button states
+    bool isButtonShortPressed(button_t* button);
+    bool isButtonLongHeld(button_t* button);
+
     uint8_t gpioChipHandle;
 
     inputs_t inputs;

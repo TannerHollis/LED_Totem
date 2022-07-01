@@ -1,10 +1,8 @@
 #ifndef APP_H
 #define APP_H
 
+#include <TotemController.h>
 #include <Box2D/Box2D.h>
-#include <LEDPanel.h>
-#include <Accelerometer.h>
-#include <IOController.h>
 #include <lgpio.h>
 #include <stdint.h>
 
@@ -15,7 +13,7 @@
 class App
 {
 public :
-	App(uint8_t id, LEDPanel* panel, Accelerometer* accelerometer, IOController* ioc);
+	App(uint8_t id, TotemController_t* tc);
 	~App();
 	
     // Loop App
@@ -35,6 +33,9 @@ public :
 
 	// I/O Controller pointer
 	IOController* ioc;
+
+	// Settings pointer
+	Setting* settings;
 
 private:
     // Update App
@@ -92,6 +93,9 @@ private:
     // App running flag
     bool running = false;
     int8_t exitCode = 0;
+
+	// Program running
+	bool* programRunning;
 };
 
 #endif
